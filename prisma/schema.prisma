@@ -70,8 +70,8 @@ model Session {
   sessionToken String   @unique
   user         User     @relation(fields: [userId], references: [id])
   userId       Int
-  userAgent    String?
-  ip           String?
+  userAgent    String? // lưu thông tin thiết bị đăng nhập của user
+  ip           String? // lưu ip đăng nhập của user
   expires      DateTime
   createdAt    DateTime @default(now())
 }
