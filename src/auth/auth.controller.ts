@@ -69,7 +69,7 @@ export class AuthController {
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)
-  async getProfile(@GetUser() user: AuthUser): Promise<AuthUser> {
+  getProfile(@GetUser() user: AuthUser): AuthUser {
     return user;
   }
 }

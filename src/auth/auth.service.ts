@@ -2,7 +2,6 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
-  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -37,8 +36,10 @@ export class AuthService {
     }
 
     // Hash password
-    const saltRounds = 12;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const hashedPassword = await bcrypt.hash(
+      password,
+      this.configService.get<number>('PASSWORD_SALT_SECRET', 12),
+    );
 
     // Tạo user mới
     const user = await this.databaseService.user.create({
@@ -60,9 +61,9 @@ export class AuthService {
     return {
       id: user.id,
       email: user.email,
-      name: user.name,
+      name: user.name ?? undefined,
       role: user.role,
-      emailVerified: user.emailVerified,
+      emailVerified: user.emailVerified ?? undefined,
       twoFactorEnabled: user.twoFactorEnabled,
     };
   }
@@ -107,9 +108,9 @@ export class AuthService {
     const authUser: AuthUser = {
       id: user.id,
       email: user.email,
-      name: user.name,
+      name: user.name ?? undefined,
       role: user.role,
-      emailVerified: user.emailVerified,
+      emailVerified: user.emailVerified ?? undefined,
       twoFactorEnabled: user.twoFactorEnabled,
     };
 
@@ -124,9 +125,6 @@ export class AuthService {
     refreshTokenDto: RefreshTokenDto,
   ): Promise<RefreshTokenResponse> {
     const { refreshToken } = refreshTokenDto;
-
-    // Hash refresh token để tìm trong DB
-    const hashedToken = await bcrypt.hash(refreshToken, 10);
 
     // Tìm refresh token trong DB
     const tokenRecord = await this.databaseService.refreshToken.findFirst({

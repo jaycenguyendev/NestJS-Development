@@ -12,7 +12,6 @@ import { DatabaseModule } from '../database/database.module';
     DatabaseModule,
     PassportModule,
     JwtModule.registerAsync({
-      // imports: [ConfigModule], // không cần thiết vì đã có trong app.module.ts
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
