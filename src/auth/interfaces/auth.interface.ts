@@ -33,3 +33,42 @@ export interface SessionInfo {
   createdAt: Date;
   expires: Date;
 }
+
+// 2FA Interfaces
+export interface Enable2FAResponse {
+  secret: string;
+  qrCodeUrl: string;
+  backupCodes: string[];
+}
+
+export interface Verify2FAResponse {
+  enabled: boolean;
+  backupCodes: string[];
+}
+
+// OAuth Interfaces
+export interface OAuthUserInfo {
+  id: string;
+  email: string;
+  name?: string;
+  picture?: string;
+  provider: string;
+}
+
+export interface OAuthResponse {
+  user: AuthUser;
+  accessToken: string;
+  refreshToken: string;
+  isNewUser: boolean;
+}
+
+// Email Verification
+export interface EmailVerificationResponse {
+  verified: boolean;
+  message: string;
+}
+
+// Password Reset
+export interface PasswordResetResponse {
+  message: string;
+}
