@@ -36,6 +36,11 @@ import {
 } from './guards';
 import { GetUser, Roles, Require2FA } from './decorators';
 import {
+  StrictThrottle,
+  AuthThrottle,
+  ApiThrottle,
+} from '../security/decorators';
+import {
   AuthUser,
   LoginResponse,
   RefreshTokenResponse,
@@ -54,12 +59,14 @@ export class AuthController {
   // ========== BASIC AUTHENTICATION ==========
 
   @Post('register')
+  @StrictThrottle()
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() registerDto: RegisterDto): Promise<AuthUser> {
     return this.authService.register(registerDto);
   }
 
   @Post('login')
+  @StrictThrottle()
   @HttpCode(HttpStatus.OK)
   async login(
     @Body() loginDto: LoginDto,
@@ -116,6 +123,7 @@ export class AuthController {
   }
 
   @Post('forgot-password')
+  @StrictThrottle()
   @HttpCode(HttpStatus.OK)
   async forgotPassword(
     @Body() forgotPasswordDto: ForgotPasswordDto,
@@ -124,6 +132,7 @@ export class AuthController {
   }
 
   @Post('reset-password')
+  @StrictThrottle()
   @HttpCode(HttpStatus.OK)
   async resetPassword(
     @Body() resetPasswordDto: ResetPasswordDto,
@@ -173,6 +182,7 @@ export class AuthController {
 
   @Post('2fa/verify')
   @UseGuards(JwtAuthGuard)
+  @AuthThrottle()
   @HttpCode(HttpStatus.OK)
   async verifyOTP(
     @GetUser() user: AuthUser,
@@ -208,6 +218,7 @@ export class AuthController {
 
   @Get('sessions')
   @UseGuards(JwtAuthGuard)
+  @ApiThrottle()
   async getActiveSessions(@GetUser() user: AuthUser) {
     return this.authService.getActiveSessions(user.id);
   }

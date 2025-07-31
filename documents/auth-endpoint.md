@@ -34,7 +34,7 @@
 | POST   | `/auth/2fa/disable` | Tắt 2FA                   | JWT    | `Disable2FADto` |
 | POST   | `/auth/2fa/verify`  | Xác thực OTP code         | JWT    | `VerifyOTPDto`  |
 
-## 🌐 OAuth Integration
+## 🌐 OAuth Integration22
 
 | Method | Endpoint            | Description                 | Guards | Body            |
 | ------ | ------------------- | --------------------------- | ------ | --------------- |

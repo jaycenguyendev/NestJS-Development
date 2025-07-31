@@ -10,7 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { DatabaseService } from '../database/database.service';
-import { JwtTokenService } from './services';
+import { JwtTokenService, TwoFactorService, OAuthService } from './services';
 import {
   RegisterDto,
   LoginDto,
@@ -43,6 +43,8 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private jwtTokenService: JwtTokenService,
+    private twoFactorService: TwoFactorService,
+    private oauthService: OAuthService,
   ) {}
 
   async register(registerDto: RegisterDto): Promise<AuthUser> {
@@ -445,7 +447,10 @@ export class AuthService {
       throw new NotFoundException('Người dùng không tồn tại');
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await this.twoFactorService.verifyCurrentPassword(
+      userId,
+      password,
+    );
     if (!isPasswordValid) {
       throw new BadRequestException('Mật khẩu không đúng');
     }
@@ -454,32 +459,16 @@ export class AuthService {
       throw new BadRequestException('2FA đã được bật');
     }
 
-    // Tạo secret cho 2FA (placeholder - cần install speakeasy package)
-    const secret = crypto.randomBytes(20).toString('hex');
-    const hashedSecret = await bcrypt.hash(secret, 10);
-
-    // Lưu secret vào database
-    await this.databaseService.twoFactorSecret.upsert({
-      where: { userId },
-      update: { secret: hashedSecret },
-      create: {
-        userId,
-        secret: hashedSecret,
-      },
-    });
-
-    // Tạo backup codes
-    const backupCodes = Array.from({ length: 8 }, () =>
-      crypto.randomBytes(4).toString('hex').toUpperCase(),
+    // Sử dụng TwoFactorService để generate setup
+    const setup = await this.twoFactorService.generateTwoFactorSetup(
+      userId,
+      user.email,
     );
 
-    // TODO: Implement QR code generation với speakeasy
-    const qrCodeUrl = `otpauth://totp/YourApp:${user.email}?secret=${secret}&issuer=YourApp`;
-
     return {
-      secret,
-      qrCodeUrl,
-      backupCodes,
+      secret: setup.manualEntryKey,
+      qrCodeUrl: setup.qrCodeUrl,
+      backupCodes: setup.backupCodes,
     };
   }
 
@@ -489,40 +478,29 @@ export class AuthService {
   ): Promise<{ message: string }> {
     const { password, otpCode } = disable2FADto;
 
-    // Tìm user và kiểm tra password
-    const user = await this.databaseService.user.findUnique({
-      where: { id: userId },
-      include: { twoFactorSecret: true },
-    });
-
-    if (!user) {
-      throw new NotFoundException('Người dùng không tồn tại');
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    // Kiểm tra password
+    const isPasswordValid = await this.twoFactorService.verifyCurrentPassword(
+      userId,
+      password,
+    );
     if (!isPasswordValid) {
       throw new BadRequestException('Mật khẩu không đúng');
     }
 
-    if (!user.twoFactorEnabled || !user.twoFactorSecret) {
+    // Kiểm tra 2FA có enabled không
+    const is2FAEnabled = await this.twoFactorService.is2FAEnabled(userId);
+    if (!is2FAEnabled) {
       throw new BadRequestException('2FA chưa được bật');
     }
 
-    // Verify OTP code (placeholder - cần implement với speakeasy)
-    if (otpCode.length !== 6) {
+    // Verify OTP code
+    const isOTPValid = await this.twoFactorService.verifyToken(userId, otpCode);
+    if (!isOTPValid) {
       throw new BadRequestException('Mã OTP không hợp lệ');
     }
 
-    // Tắt 2FA
-    await this.databaseService.user.update({
-      where: { id: userId },
-      data: { twoFactorEnabled: false },
-    });
-
-    // Xóa secret
-    await this.databaseService.twoFactorSecret.delete({
-      where: { userId },
-    });
+    // Disable 2FA
+    await this.twoFactorService.disable2FA(userId);
 
     return { message: '2FA đã được tắt thành công' };
   }
@@ -533,94 +511,103 @@ export class AuthService {
   ): Promise<Verify2FAResponse> {
     const { otpCode } = verifyOTPDto;
 
-    // Tìm user
-    const user = await this.databaseService.user.findUnique({
-      where: { id: userId },
-      include: { twoFactorSecret: true },
-    });
-
-    if (!user || !user.twoFactorSecret) {
-      throw new BadRequestException('2FA chưa được thiết lập');
-    }
-
-    // Verify OTP code (placeholder - cần implement với speakeasy)
-    if (otpCode.length !== 6) {
+    // Verify OTP code
+    const isTokenValid = await this.twoFactorService.verifyToken(
+      userId,
+      otpCode,
+    );
+    if (!isTokenValid) {
       throw new BadRequestException('Mã OTP không hợp lệ');
     }
 
+    // Kiểm tra xem 2FA đã được enable chưa
+    const is2FAEnabled = await this.twoFactorService.is2FAEnabled(userId);
+
     // Nếu chưa enable, enable 2FA
-    if (!user.twoFactorEnabled) {
-      await this.databaseService.user.update({
-        where: { id: userId },
-        data: { twoFactorEnabled: true },
-      });
+    if (!is2FAEnabled) {
+      await this.twoFactorService.enable2FA(userId);
     }
+
+    // Generate backup codes nếu cần
+    const backupCodes =
+      await this.twoFactorService.regenerateBackupCodes(userId);
 
     return {
       enabled: true,
-      backupCodes: [],
+      backupCodes,
     };
   }
 
-  // OAuth Methods (placeholder - cần implement với Google/Facebook SDK)
+  // OAuth Methods
   async oauthLogin(
     oauthLoginDto: OAuthLoginDto,
     userAgent?: string,
     ip?: string,
   ): Promise<OAuthResponse> {
-    const { provider, accessToken } = oauthLoginDto;
+    const { provider, accessToken, idToken } = oauthLoginDto;
 
-    // TODO: Verify accessToken với provider (Google/Facebook)
-    // const userInfo = await this.verifyOAuthToken(provider, accessToken);
-
-    // Placeholder OAuth user info
-    const userInfo = {
-      id: 'oauth_user_id',
-      email: 'oauth@example.com',
-      name: 'OAuth User',
-      picture: null,
+    // Verify OAuth token và lấy user info
+    const oauthUserInfo = await this.oauthService.verifyOAuthToken(
       provider,
-    };
+      accessToken,
+      idToken,
+    );
 
-    // Tìm hoặc tạo user
-    let user = await this.databaseService.user.findUnique({
-      where: { email: userInfo.email },
-    });
+    // Tìm user existing bằng OAuth account
+    let user = await this.oauthService.findUserByOAuthAccount(
+      provider,
+      oauthUserInfo.id,
+    );
 
     let isNewUser = false;
 
     if (!user) {
-      // Tạo user mới
-      user = await this.databaseService.user.create({
-        data: {
-          email: userInfo.email,
-          name: userInfo.name,
-          password: await bcrypt.hash(
-            crypto.randomBytes(32).toString('hex'),
-            12,
-          ),
-          emailVerified: new Date(),
-        },
+      // Tìm user bằng email nếu chưa có OAuth account
+      const existingUser = await this.databaseService.user.findUnique({
+        where: { email: oauthUserInfo.email },
       });
-      isNewUser = true;
-    }
 
-    // Tạo hoặc cập nhật OAuth account
-    await this.databaseService.oAuthAccount.upsert({
-      where: {
-        provider_providerAccountId: {
-          provider,
-          providerAccountId: userInfo.id,
-        },
-      },
-      update: { accessToken },
-      create: {
+      if (existingUser) {
+        // Link OAuth account với user existing
+        await this.oauthService.linkOAuthAccount(
+          existingUser.id,
+          oauthUserInfo,
+          accessToken,
+        );
+        user = existingUser;
+      } else {
+        // Tạo user mới
+        const newUser = await this.databaseService.user.create({
+          data: {
+            email: oauthUserInfo.email,
+            name: oauthUserInfo.name,
+            password: await bcrypt.hash(
+              crypto.randomBytes(32).toString('hex'),
+              12,
+            ),
+            emailVerified: new Date(), // OAuth users are pre-verified
+          },
+        });
+
+        // Link OAuth account
+        await this.oauthService.linkOAuthAccount(
+          newUser.id,
+          oauthUserInfo,
+          accessToken,
+        );
+
+        user = newUser;
+        isNewUser = true;
+      }
+    } else {
+      // Update OAuth access token
+      await this.oauthService.saveOrUpdateOAuthAccount(
+        user.id,
         provider,
-        providerAccountId: userInfo.id,
-        userId: user.id,
+        oauthUserInfo.id,
         accessToken,
-      },
-    });
+      );
+    }
 
     // Tạo session và tokens
     const session = await this.databaseService.session.create({
