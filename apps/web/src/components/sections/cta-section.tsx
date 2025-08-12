@@ -30,8 +30,10 @@ export function CTASection() {
               <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
                 <Button asChild size="lg" variant="secondary" className="group">
                   <Link href="/auth/sign-up">
-                    Get Started Free
-                    <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    <>
+                      Get Started Free
+                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </>
                   </Link>
                 </Button>
                 <Button
@@ -45,8 +47,10 @@ export function CTASection() {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <Github className="mr-2 h-4 w-4" />
-                    View on GitHub
+                    <>
+                      <Github className="mr-2 h-4 w-4" />
+                      View on GitHub
+                    </>
                   </Link>
                 </Button>
               </div>

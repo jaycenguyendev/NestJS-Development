@@ -2,7 +2,6 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import helmet from 'helmet';
 import * as compression from 'compression';
 import { SecurityHeadersInterceptor } from './security';

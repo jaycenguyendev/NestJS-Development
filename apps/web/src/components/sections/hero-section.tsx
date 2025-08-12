@@ -38,8 +38,10 @@ export function HeroSection() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild size="lg" className="group">
                 <Link href="/auth/sign-up">
-                  Get Started
-                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  <>
+                    Get Started
+                    <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </>
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg">

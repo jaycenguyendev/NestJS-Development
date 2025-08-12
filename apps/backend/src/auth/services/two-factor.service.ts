@@ -2,7 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as speakeasy from 'speakeasy';
 import * as QRCode from 'qrcode';
-import * as bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcrypt';
 import { DatabaseService } from '../../database/database.service';
 
 export interface TwoFactorSetup {
