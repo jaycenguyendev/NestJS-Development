@@ -7,66 +7,66 @@
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/prisma"
-} 
+}
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model Product {
-  id Int @default(autoincrement()) @id
-  name String @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  price Float
-  sale Boolean @default(false)
+  id           Int          @id @default(autoincrement())
+  name         String       @unique
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  price        Float
+  sale         Boolean      @default(false)
   availability Availability
-  description Description?
-  reviews Reviews[]
-  tags Tag[]
+  description  Description?
+  reviews      Reviews[]
+  tags         Tag[]
 }
 
 model Description {
-  id Int @default(autoincrement()) @id
-  content String
-  product Product @relation(fields: [productId], references: [id])
-  productId Int @unique
+  id        Int     @id @default(autoincrement())
+  content   String
+  product   Product @relation(fields: [productId], references: [id])
+  productId Int     @unique
 }
 
 model Reviews {
-  id Int @default(autoincrement()) @id
-  title String
-  content String
-  rating Int
-  product Product @relation(fields: [productId], references: [id])
+  id        Int     @id @default(autoincrement())
+  title     String
+  content   String
+  rating    Int
+  product   Product @relation(fields: [productId], references: [id])
   productId Int
 }
 
 model Tag {
-  id Int @default(autoincrement()) @id
+  id      Int       @id @default(autoincrement())
   content String
   product Product[]
 }
 
 model User {
-  id                Int       @default(autoincrement()) @id
-  email             String    @unique
-  password          String
-  name              String?
-  role              Role      @default(USER)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  emailVerified     DateTime?
-  twoFactorEnabled  Boolean   @default(false)
-  twoFactorSecret   TwoFactorSecret?
-  sessions          Session[]
-  refreshTokens     RefreshToken[]
-  accounts          OAuthAccount[]
+  id               Int              @id @default(autoincrement())
+  email            String           @unique
+  password         String
+  name             String?
+  role             Role             @default(USER)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  emailVerified    DateTime?
+  twoFactorEnabled Boolean          @default(false)
+  twoFactorSecret  TwoFactorSecret?
+  sessions         Session[]
+  refreshTokens    RefreshToken[]
+  accounts         OAuthAccount[]
 }
 
 model Session {
-  id           Int      @default(autoincrement()) @id
+  id           Int      @id @default(autoincrement())
   sessionToken String   @unique
   user         User     @relation(fields: [userId], references: [id])
   userId       Int
@@ -77,17 +77,17 @@ model Session {
 }
 
 model RefreshToken {
-  id           Int      @default(autoincrement()) @id
-  tokenHash    String   @unique
-  user         User     @relation(fields: [userId], references: [id])
-  userId       Int
-  revoked      Boolean  @default(false)
-  expires      DateTime
-  createdAt    DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  tokenHash String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  revoked   Boolean  @default(false)
+  expires   DateTime
+  createdAt DateTime @default(now())
 }
 
 model OAuthAccount {
-  id                Int      @default(autoincrement()) @id
+  id                Int      @id @default(autoincrement())
   provider          String
   providerAccountId String
   user              User     @relation(fields: [userId], references: [id])
@@ -101,19 +101,20 @@ model OAuthAccount {
   sessionState      String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+
   @@unique([provider, providerAccountId])
 }
 
 model TwoFactorSecret {
-  id        Int      @default(autoincrement()) @id
-  secret    String   // Đã mã hóa
+  id        Int      @id @default(autoincrement())
+  secret    String // Đã mã hóa
   user      User     @relation(fields: [userId], references: [id])
   userId    Int      @unique
   createdAt DateTime @default(now())
 }
 
 model VerificationToken {
-  id         Int      @default(autoincrement()) @id
+  id         Int      @id @default(autoincrement())
   identifier String
   token      String   @unique
   expires    DateTime
