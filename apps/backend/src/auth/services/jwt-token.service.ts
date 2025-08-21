@@ -51,8 +51,8 @@ export class JwtTokenService {
     };
 
     return this.jwtService.signAsync(payload, {
-      secret: this.configService.get<string>('JWT_SECRET'),
-      expiresIn: this.configService.get<string>('JWT_EXPIRES_IN', '15m'),
+      secret: this.configService.getOrThrow<string>('JWT_SECRET'),
+      expiresIn: this.configService.getOrThrow<string>('JWT_EXPIRES_IN'),
     });
   }
 
@@ -69,8 +69,10 @@ export class JwtTokenService {
     };
 
     const token = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-      expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN', '7d'),
+      secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
+      expiresIn: this.configService.getOrThrow<string>(
+        'JWT_REFRESH_EXPIRES_IN',
+      ),
     });
 
     // Hash token và lưu vào database
@@ -111,9 +113,9 @@ export class JwtTokenService {
   async verifyAccessToken(token: string): Promise<AccessTokenPayload> {
     try {
       return this.jwtService.verifyAsync(token, {
-        secret: this.configService.get<string>('JWT_SECRET'),
+        secret: this.configService.getOrThrow<string>('JWT_SECRET'),
       });
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException('Access token không hợp lệ');
     }
   }
@@ -127,8 +129,8 @@ export class JwtTokenService {
     try {
       // Verify JWT structure
       const payload = this.jwtService.verify(token, {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-      }) as RefreshTokenPayload;
+        secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
+      });
 
       if (payload.type !== 'refresh') {
         throw new UnauthorizedException('Token type không hợp lệ');
@@ -260,9 +262,8 @@ export class JwtTokenService {
    * Helper: Lấy thời gian hết hạn refresh token (ms)
    */
   private getRefreshTokenExpiryMs(): number {
-    const expiresIn = this.configService.get<string>(
+    const expiresIn = this.configService.getOrThrow<string>(
       'JWT_REFRESH_EXPIRES_IN',
-      '7d',
     );
 
     // Parse thời gian (7d, 24h, 60m, etc.)
@@ -300,7 +301,7 @@ export class JwtTokenService {
    */
   isTokenExpired(token: string): boolean {
     try {
-      const decoded = this.jwtService.decode(token) as any;
+      const decoded = this.jwtService.decode(token);
       if (!decoded || !decoded.exp) {
         return true;
       }

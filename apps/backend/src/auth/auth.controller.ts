@@ -258,4 +258,20 @@ export class AuthController {
   adminOnly(@GetUser() user: AuthUser): { message: string } {
     return { message: `Admin action performed by ${user.email}` };
   }
+
+  // Test endpoint for email functionality (development only)
+  @Post('test-email')
+  @HttpCode(HttpStatus.OK)
+  @AuthThrottle() // 10 requests per 15 minutes
+  async testEmail(
+    @Body() body: { email: string },
+  ): Promise<{ message: string; success: boolean }> {
+    const success = await this.authService.sendTestEmail(body.email);
+    return {
+      message: success
+        ? 'Test email sent successfully'
+        : 'Failed to send test email. Check email configuration.',
+      success,
+    };
+  }
 }

@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState } from 'react';
+import { isReactQueryDevToolsEnabled } from '@/config/env.config';
 
 export function QueryProvider({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -16,7 +17,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
               if (
                 error?.status >= 400 &&
                 error?.status < 500 &&
-                ![408, 429].includes(error.status)
+                ![408, 429, 409].includes(error.status)
               ) {
                 return false;
               }
@@ -39,7 +40,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      {process.env.NODE_ENV === 'development' && (
+      {isReactQueryDevToolsEnabled() && (
         <ReactQueryDevtools initialIsOpen={false} />
       )}
     </QueryClientProvider>

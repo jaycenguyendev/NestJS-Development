@@ -47,8 +47,8 @@ export class OAuthService {
   ) {
     // Initialize Google OAuth client
     this.googleClient = new OAuth2Client(
-      this.configService.get<string>('GOOGLE_CLIENT_ID'),
-      this.configService.get<string>('GOOGLE_CLIENT_SECRET'),
+      this.configService.getOrThrow<string>('GOOGLE_CLIENT_ID'),
+      this.configService.getOrThrow<string>('GOOGLE_CLIENT_SECRET'),
     );
   }
 
@@ -91,7 +91,7 @@ export class OAuthService {
     try {
       const ticket = await this.googleClient.verifyIdToken({
         idToken,
-        audience: this.configService.get<string>('GOOGLE_CLIENT_ID'),
+        audience: this.configService.getOrThrow<string>('GOOGLE_CLIENT_ID'),
       });
 
       const payload = ticket.getPayload() as GoogleTokenPayload;
@@ -120,7 +120,7 @@ export class OAuthService {
     try {
       // Verify token with Facebook
       const tokenValidationResponse = await axios.get(
-        `https://graph.facebook.com/debug_token?input_token=${accessToken}&access_token=${this.configService.get<string>('FACEBOOK_APP_ID')}|${this.configService.get<string>('FACEBOOK_APP_SECRET')}`,
+        `https://graph.facebook.com/debug_token?input_token=${accessToken}&access_token=${this.configService.getOrThrow<string>('FACEBOOK_APP_ID')}|${this.configService.getOrThrow<string>('FACEBOOK_APP_SECRET')}`,
       );
 
       const tokenData = tokenValidationResponse.data.data;

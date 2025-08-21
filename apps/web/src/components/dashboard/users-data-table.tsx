@@ -17,7 +17,7 @@ import {
   X,
   Check,
 } from 'lucide-react';
-import { UserRole } from '@repo/types';
+type UserRole = 'USER' | 'ADMIN' | 'MODERATOR';
 
 interface User {
   id: string;
@@ -134,7 +134,7 @@ export function UsersDataTable({
 
     return (
       <span
-        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${styles[role]}`}
+        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${styles[role]}`}
       >
         {role}
       </span>
@@ -155,7 +155,7 @@ export function UsersDataTable({
       {addingUser && (
         <Card className="border-dashed">
           <CardContent className="p-4">
-            <div className="grid grid-cols-12 gap-4 items-center">
+            <div className="grid grid-cols-12 items-center gap-4">
               <div className="col-span-1">
                 <div className="h-4 w-4" />
               </div>
@@ -205,7 +205,7 @@ export function UsersDataTable({
                       role: e.target.value as UserRole,
                     }))
                   }
-                  className="h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                  className="border-input bg-background h-8 w-full rounded-md border px-3 py-1 text-sm"
                 >
                   <option value="USER">User</option>
                   <option value="MODERATOR">Moderator</option>
@@ -242,7 +242,7 @@ export function UsersDataTable({
       )}
 
       {/* Table Header */}
-      <div className="grid grid-cols-12 gap-4 items-center p-4 bg-muted/50 rounded-lg font-medium text-sm">
+      <div className="bg-muted/50 grid grid-cols-12 items-center gap-4 rounded-lg p-4 text-sm font-medium">
         <div className="col-span-1">
           <input
             type="checkbox"
@@ -266,7 +266,7 @@ export function UsersDataTable({
             <CardContent className="p-4">
               {editingUser?.id === user.id ? (
                 // Edit Mode
-                <div className="grid grid-cols-12 gap-4 items-center">
+                <div className="grid grid-cols-12 items-center gap-4">
                   <div className="col-span-1">
                     <input
                       type="checkbox"
@@ -318,7 +318,7 @@ export function UsersDataTable({
                             : null,
                         )
                       }
-                      className="h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                      className="border-input bg-background h-8 w-full rounded-md border px-3 py-1 text-sm"
                     >
                       <option value="USER">User</option>
                       <option value="MODERATOR">Moderator</option>
@@ -340,7 +340,7 @@ export function UsersDataTable({
                 </div>
               ) : (
                 // View Mode
-                <div className="grid grid-cols-12 gap-4 items-center">
+                <div className="grid grid-cols-12 items-center gap-4">
                   <div className="col-span-1">
                     <input
                       type="checkbox"
@@ -351,32 +351,20 @@ export function UsersDataTable({
                   </div>
                   <div className="col-span-2 font-medium">{user.firstName}</div>
                   <div className="col-span-2 font-medium">{user.lastName}</div>
-                  <div className="col-span-3 text-muted-foreground">
+                  <div className="text-muted-foreground col-span-3">
                     {user.email}
                   </div>
                   <div className="col-span-2">{getRoleBadge(user.role)}</div>
                   <div className="col-span-1 flex items-center space-x-1">
                     {user.isEmailVerified ? (
-                      <MailCheck
-                        className="h-4 w-4 text-green-600"
-                        title="Email verified"
-                      />
+                      <MailCheck className="h-4 w-4 text-green-600" />
                     ) : (
-                      <Mail
-                        className="h-4 w-4 text-muted-foreground"
-                        title="Email not verified"
-                      />
+                      <Mail className="text-muted-foreground h-4 w-4" />
                     )}
                     {user.isTwoFactorEnabled ? (
-                      <ShieldCheck
-                        className="h-4 w-4 text-green-600"
-                        title="2FA enabled"
-                      />
+                      <ShieldCheck className="h-4 w-4 text-green-600" />
                     ) : (
-                      <Shield
-                        className="h-4 w-4 text-muted-foreground"
-                        title="2FA disabled"
-                      />
+                      <Shield className="text-muted-foreground h-4 w-4" />
                     )}
                   </div>
                   <div className="col-span-1">
@@ -401,7 +389,7 @@ export function UsersDataTable({
               )}
 
               {/* Additional Info Row */}
-              <div className="mt-2 pt-2 border-t grid grid-cols-12 gap-4 text-xs text-muted-foreground">
+              <div className="text-muted-foreground mt-2 grid grid-cols-12 gap-4 border-t pt-2 text-xs">
                 <div className="col-span-1" />
                 <div className="col-span-6">
                   ID: {user.id} • Created: {formatDate(user.createdAt)} •
@@ -415,7 +403,7 @@ export function UsersDataTable({
       </div>
 
       {data.length === 0 && (
-        <div className="text-center py-8">
+        <div className="py-8 text-center">
           <p className="text-muted-foreground">No users found.</p>
         </div>
       )}

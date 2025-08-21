@@ -33,7 +33,7 @@ export class TwoFactorService {
     // Tạo secret
     const secret = speakeasy.generateSecret({
       name: userEmail,
-      issuer: this.configService.get<string>('APP_NAME', 'NestJS App'),
+      issuer: this.configService.getOrThrow<string>('APP_NAME'),
       length: 32,
     });
 
@@ -188,7 +188,7 @@ export class TwoFactorService {
     const otpauthUrl = speakeasy.otpauthURL({
       secret,
       label: userEmail,
-      issuer: this.configService.get<string>('APP_NAME', 'NestJS App'),
+      issuer: this.configService.getOrThrow<string>('APP_NAME'),
       encoding: 'base32',
     });
 

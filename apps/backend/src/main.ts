@@ -33,9 +33,9 @@ async function bootstrap() {
   // Compression middleware
   app.use(compression());
 
-  // CORS configuration
+  // CORS configuration using env config
   app.enableCors({
-    origin: configService.get<string>('FRONTEND_URL', 'http://localhost:3001'),
+    origin: configService.getOrThrow<string>('FRONTEND_URL'),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
@@ -70,8 +70,8 @@ async function bootstrap() {
   // Trust proxy (for deployment behind reverse proxy)
   app.getHttpAdapter().getInstance().set('trust proxy', 1);
 
-  const port = configService.get<number>('PORT', 3000);
-  const host = configService.get<string>('HOST', '0.0.0.0');
+  const port = configService.getOrThrow<number>('PORT');
+  const host = configService.getOrThrow<string>('HOST');
 
   await app.listen(port, host);
 
@@ -79,7 +79,7 @@ async function bootstrap() {
   logger.log(`🛡️  Security middleware enabled`);
   logger.log(`📝 Validation enabled with whitelist and transform`);
   logger.log(
-    `🔒 CORS enabled for: ${configService.get<string>('FRONTEND_URL', 'http://localhost:3001')}`,
+    `🔒 CORS enabled for: ${configService.getOrThrow<string>('FRONTEND_URL')}`,
   );
 }
 

@@ -10,7 +10,12 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { DatabaseService } from '../database/database.service';
-import { JwtTokenService, TwoFactorService, OAuthService } from './services';
+import {
+  JwtTokenService,
+  TwoFactorService,
+  OAuthService,
+  EmailService,
+} from './services';
 import {
   RegisterDto,
   LoginDto,
@@ -45,6 +50,7 @@ export class AuthService {
     private jwtTokenService: JwtTokenService,
     private twoFactorService: TwoFactorService,
     private oauthService: OAuthService,
+    private emailService: EmailService,
   ) {}
 
   async register(registerDto: RegisterDto): Promise<AuthUser> {
@@ -59,11 +65,11 @@ export class AuthService {
       throw new ConflictException('Email đã được sử dụng');
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(
-      password,
-      this.configService.get<number>('PASSWORD_SALT_SECRET', 12),
+    const saltRounds = Number(
+      this.configService.getOrThrow<number>('PASSWORD_SALT_SECRET'),
     );
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     // Tạo user mới
     const user = await this.databaseService.user.create({
@@ -81,6 +87,23 @@ export class AuthService {
         twoFactorEnabled: true,
       },
     });
+
+    // Tạo verification code (6 chữ số)
+    const verificationToken = Math.floor(
+      100000 + Math.random() * 900000,
+    ).toString();
+    const hashedToken = await bcrypt.hash(verificationToken, 10);
+
+    await this.databaseService.verificationToken.create({
+      data: {
+        identifier: email,
+        token: hashedToken,
+        expires: new Date(Date.now() + 10 * 60 * 1000), // 10 phút
+      },
+    });
+
+    // Gửi email verification
+    await this.emailService.sendVerificationEmail(email, verificationToken);
 
     return {
       id: user.id,
@@ -213,7 +236,7 @@ export class AuthService {
     // Hash mật khẩu mới
     const hashedNewPassword = await bcrypt.hash(
       newPassword,
-      this.configService.get<number>('PASSWORD_SALT_SECRET', 12),
+      this.configService.getOrThrow<number>('PASSWORD_SALT_SECRET', 12),
     );
 
     // Cập nhật mật khẩu
@@ -258,8 +281,8 @@ export class AuthService {
       },
     });
 
-    // TODO: Gửi email với resetToken
-    // await this.emailService.sendPasswordResetEmail(email, resetToken);
+    // Gửi email với resetToken
+    await this.emailService.sendPasswordResetEmail(email, resetToken);
 
     return {
       message: 'Nếu email tồn tại, link reset sẽ được gửi đến email của bạn',
@@ -304,7 +327,7 @@ export class AuthService {
     // Hash mật khẩu mới
     const hashedNewPassword = await bcrypt.hash(
       newPassword,
-      this.configService.get<number>('PASSWORD_SALT_SECRET', 12),
+      this.configService.getOrThrow<number>('PASSWORD_SALT_SECRET', 12),
     );
 
     // Cập nhật mật khẩu
@@ -373,6 +396,11 @@ export class AuthService {
       where: { id: validToken.id },
     });
 
+    // Gửi welcome email
+    if (user.name) {
+      await this.emailService.sendWelcomeEmail(user.name, user.email);
+    }
+
     return {
       verified: true,
       message: 'Email đã được xác thực thành công',
@@ -404,8 +432,10 @@ export class AuthService {
       };
     }
 
-    // Tạo verification token mới
-    const verificationToken = crypto.randomBytes(32).toString('hex');
+    // Tạo verification code mới (6 chữ số)
+    const verificationToken = Math.floor(
+      100000 + Math.random() * 900000,
+    ).toString();
     const hashedToken = await bcrypt.hash(verificationToken, 10);
 
     // Xóa token cũ nếu có
@@ -418,12 +448,12 @@ export class AuthService {
       data: {
         identifier: email,
         token: hashedToken,
-        expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 giờ
+        expires: new Date(Date.now() + 10 * 60 * 1000), // 10 phút
       },
     });
 
-    // TODO: Gửi email với verificationToken
-    // await this.emailService.sendVerificationEmail(email, verificationToken);
+    // Gửi email với verificationToken
+    await this.emailService.sendVerificationEmail(email, verificationToken);
 
     return {
       verified: false,
@@ -695,5 +725,10 @@ export class AuthService {
       message: 'Cleanup completed',
       count: count + expiredSessions.count,
     };
+  }
+
+  // Test method for email functionality
+  async sendTestEmail(email: string): Promise<boolean> {
+    return this.emailService.sendTestEmail(email);
   }
 }
