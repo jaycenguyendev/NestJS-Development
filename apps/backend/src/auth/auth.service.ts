@@ -351,7 +351,7 @@ export class AuthService {
   async verifyEmail(
     verifyEmailDto: VerifyEmailDto,
   ): Promise<EmailVerificationResponse> {
-    const { token } = verifyEmailDto;
+    const { otp, email } = verifyEmailDto;
 
     // Tìm token trong database
     const verificationTokens =
@@ -363,7 +363,7 @@ export class AuthService {
 
     let validToken: any = null;
     for (const vToken of verificationTokens) {
-      const isTokenValid = await bcrypt.compare(token, vToken.token);
+      const isTokenValid = await bcrypt.compare(otp, vToken.token);
       if (isTokenValid) {
         validToken = vToken;
         break;

@@ -20,6 +20,7 @@ const actionTypes = {
 
 let count = 0;
 
+//* it make sure count can't reach max number in Javascriptqa
 function genId() {
   count = (count + 1) % Number.MAX_SAFE_INTEGER;
   return count.toString();

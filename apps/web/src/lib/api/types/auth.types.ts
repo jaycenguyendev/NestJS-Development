@@ -50,7 +50,8 @@ export interface SignUpApiRequest {
 
 // Verify Email Types
 export interface VerifyEmailRequest {
-  token: string;
+  email: string;
+  otp: string;
 }
 
 export interface ResendVerificationEmailRequest {

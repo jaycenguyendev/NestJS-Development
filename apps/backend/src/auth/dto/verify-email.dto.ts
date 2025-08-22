@@ -1,7 +1,10 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsEmail } from 'class-validator';
 
 export class VerifyEmailDto {
-  @IsString({ message: 'Token phải là chuỗi' })
-  @IsNotEmpty({ message: 'Token không được để trống' })
-  token: string;
+  @IsString({ message: 'OTP phải là chuỗi' })
+  @IsNotEmpty({ message: 'OTP không được để trống' })
+  otp: string;
+
+  @IsEmail({}, { message: 'Email không hợp lệ' })
+  email: string;
 }

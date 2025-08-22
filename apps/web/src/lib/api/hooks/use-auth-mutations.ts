@@ -42,15 +42,8 @@ export const useRegister = (options?: UseRegisterOptions) => {
     onSuccess: (data) => {
       // Handle successful registration
       options?.onSuccess?.(data);
-
-      // Store email for verification page and redirect
       localStorage.setItem('pendingVerificationEmail', data.email);
-      // Generate a temporary authentication token for URL
-      const authToken = Math.random().toString(36).substring(2, 15);
-      localStorage.setItem('pendingAuthToken', authToken);
-      router.push(
-        `/auth/verify-email?email=${encodeURIComponent(data.email)}&authentication-token=${authToken}`,
-      );
+      router.push(`/auth/verify-email?email=${encodeURIComponent(data.email)}`);
     },
     onError: (error: ApiError) => {
       console.error('Registration error:', error);

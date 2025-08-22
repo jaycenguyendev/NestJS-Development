@@ -21,29 +21,14 @@ function VerifyEmailContent() {
   const [authToken, setAuthToken] = useState('');
   const [countdown, setCountdown] = useState(0);
 
-  // Get email and auth token from URL params or localStorage
   useEffect(() => {
     const emailParam = searchParams.get('email');
-    const authTokenParam = searchParams.get('authentication-token');
-    const storedEmail = localStorage.getItem('pendingVerificationEmail');
-    const storedAuthToken = localStorage.getItem('pendingAuthToken');
-
-    // Validate auth token for security
-    if (
-      authTokenParam &&
-      storedAuthToken &&
-      authTokenParam === storedAuthToken
-    ) {
-      if (emailParam) {
-        setEmail(emailParam);
-        setAuthToken(authTokenParam);
-        localStorage.setItem('pendingVerificationEmail', emailParam);
-      }
-    } else if (storedEmail && storedAuthToken) {
-      setEmail(storedEmail);
-      setAuthToken(storedAuthToken);
+    const pendingVerificationEmail = localStorage.getItem(
+      'pendingVerificationEmail',
+    );
+    if (emailParam && pendingVerificationEmail) {
+      setEmail(pendingVerificationEmail);
     } else {
-      // No valid session found, redirect to sign-up
       router.push('/auth/sign-up');
     }
   }, [searchParams, router]);
@@ -66,7 +51,6 @@ function VerifyEmailContent() {
         description: 'Email của bạn đã được xác thực. Đang chuyển hướng...',
       });
       localStorage.removeItem('pendingVerificationEmail');
-      localStorage.removeItem('pendingAuthToken');
       setTimeout(() => {
         router.push('/auth/sign-in');
       }, 2000);
@@ -110,7 +94,8 @@ function VerifyEmailContent() {
     }
 
     verifyEmailMutation.mutate({
-      token: verificationCode.trim(),
+      email,
+      otp: verificationCode.trim(),
     });
   };
 
